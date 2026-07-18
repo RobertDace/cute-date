@@ -4,39 +4,45 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ==========================================
-// 📝 CONFIGURATION OBJECT
+// 📝 CONFIGURATION OBJECT (Black & Pink Theme)
 // ==========================================
 const CONFIG = {
   step1: {
-    title: "Special Invitation Just For You 🌸",
+    title: "A Special Invitation Just For You 🖤",
     question: "Will you go on a date with me?",
-    yesText: "YES, I'D LOVE TO! ♥",
+    yesText: "YES, I'D LOVE TO! 💕",
     noText: "No 😢",
   },
   step2: {
-    title: "So... when are you free? 📅🐾",
-    dateLabel: "Pick a day",
-    timeLabel: "What time?",
-    submitText: "Set the date ❤️"
+    title: "Let's match our times 📅✨",
+    dateLabel: "Pick a day (Look out for special days! ✨)",
+    timeLabel: "What time works best?",
+    submitText: "Lock the Date 💕"
   },
   step3: {
-    title: "What are we feeling? 🍽️✨",
-    submitText: "Next ❤️"
+    title: "What are we feeling tonight? 🍽️",
+    submitText: "Finalize Setup 💕"
   },
   step4: {
-    title: "YAYYY!! 💞",
-    successMessage: "I can't wait to see you! 🌷✨",
-    subtext: "Your date is set! I'll be counting down the days until we can enjoy our time together. Get ready for a wonderful experience filled with laughter, good food, and unforgettable memories. 🌸💖"
-  }
+    title: "YAYYY!! IT'S A DATE! 💖",
+    successMessage: "I absolutely can't wait to see you! 🌷✨",
+    subtext: "(Deployment status: Perfect. Playlist synced. See you very soon xx)"
+  },
+  // 🎵 Playlist data ala project myorbit (Ganti source URL dengan file audio/Spotify embed jika perlu)
+  playlist: [
+    { title: "Our Favorite Song 01", artist: "Artist Name", src: "#" },
+    { title: "Cozy Vibe Track 02", artist: "Artist Name", src: "#" },
+    { title: "Midnight Drive 03", artist: "Artist Name", src: "#" },
+  ]
 };
 
 const DATE_ACTIVITIES = [
-  { id: 'pizza', name: 'Pizza 🍕', description: 'Cheesy and warm goodness' },
-  { id: 'sushi', name: 'Sushi 🍣', description: 'Premium rolls & sashimi vibe' },
-  { id: 'burgers', name: 'Burgers 🍔', description: 'Juicy patties and fries' },
-  { id: 'pasta', name: 'Pasta 🍝', description: 'Creamy carbonara or bolognese' },
-  { id: 'tacos', name: 'Tacos 🌮', description: 'Spicy and crunchy crunch' },
-  { id: 'ramen', name: 'Ramen 🍜', description: 'Warm comfort food broth' },
+  { id: 'sushi', name: 'Sushi Dinner 🍣', description: 'Premium rolls & deep talk environment' },
+  { id: 'gaming', name: 'Arcade & Gaming 🎮', description: 'Playful co-op matches & fun times' },
+  { id: 'coffee', name: 'Late Coffee ☕', description: 'Warm drinks, quiet space, just us' },
+  { id: 'ramen', name: 'Ramen Night 🍜', description: 'Cozy authentic comfort food' },
+  { id: 'movie', name: 'Cinema Date 🎬', description: 'Watching something special together' },
+  { id: 'gelato', name: 'Sweet Gelato 🍨', description: 'Ice cream walks & late night chills' },
 ];
 
 const TIME_SLOTS = [
@@ -53,17 +59,18 @@ const MONTHS = [
 
 export default function DateAskingFlow() {
   const [step, setStep] = useState(1);
-  const [selectedDate, setSelectedDate] = useState(null); 
+  const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedActivity, setSelectedActivity] = useState('');
   const [noBtnPos, setNoBtnPos] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
 
-  const [now, setNow] = useState(new Date());
+  // 🎵 Audio Player States (myorbit core logic)
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTrackIdx, setCurrentTrackIdx] = useState(0);
 
-  useEffect(() => {
-    setNow(new Date());
-  }, [step]);
+  const [now, setNow] = useState(new Date());
+  useEffect(() => { setNow(new Date()); }, [step]);
 
   const todayYear = now.getFullYear();
   const todayMonth = now.getMonth();
@@ -84,8 +91,7 @@ export default function DateAskingFlow() {
   const handlePrevMonth = () => {
     if (isPrevMonthDisabled) return;
     if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear(prev => prev - 1);
+      setCurrentMonth(11); setCurrentYear(prev => prev - 1);
     } else {
       setCurrentMonth(prev => prev - 1);
     }
@@ -93,8 +99,7 @@ export default function DateAskingFlow() {
 
   const handleNextMonth = () => {
     if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear(prev => prev + 1);
+      setCurrentMonth(0); setCurrentYear(prev => prev + 1);
     } else {
       setCurrentMonth(prev => prev + 1);
     }
@@ -102,7 +107,6 @@ export default function DateAskingFlow() {
 
   const isTimePast = (timeStr) => {
     if (!selectedDate) return false;
-    
     if (selectedDate.year < todayYear) return true;
     if (selectedDate.year === todayYear && selectedDate.month < todayMonth) return true;
     if (selectedDate.year === todayYear && selectedDate.month === todayMonth && selectedDate.day < todayDay) return true;
@@ -110,16 +114,12 @@ export default function DateAskingFlow() {
     if (selectedDate.year === todayYear && selectedDate.month === todayMonth && selectedDate.day === todayDay) {
       const [time, modifier] = timeStr.split(' ');
       let [hours, minutes] = time.split(':');
-      hours = parseInt(hours, 10);
-      minutes = parseInt(minutes, 10);
-
+      hours = parseInt(hours, 10); minutes = parseInt(minutes, 10);
       if (modifier === 'PM' && hours < 12) hours += 12;
       if (modifier === 'AM' && hours === 12) hours = 0;
-
       const slotDate = new Date(todayYear, todayMonth, todayDay, hours, minutes);
       return slotDate < now;
     }
-
     return false;
   };
 
@@ -128,201 +128,241 @@ export default function DateAskingFlow() {
     const container = containerRef.current.getBoundingClientRect();
     const maxX = (container.width / 2) - 60;
     const maxY = (container.height / 2) - 40;
-
     const randomX = (Math.random() * 2 - 1) * maxX;
     const randomY = (Math.random() * 2 - 1) * maxY;
-
     setNoBtnPos({ x: randomX, y: randomY });
   };
 
   const pageVariants = {
-    initial: { opacity: 0, y: 20, scale: 0.95 },
-    animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: "easeOut" } },
-    exit: { opacity: 0, y: -20, scale: 0.95, transition: { duration: 0.3, ease: "easeIn" } }
+    initial: { opacity: 0, y: 30, scale: 0.98 },
+    animate: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100, damping: 14 } },
+    exit: { opacity: 0, y: -30, scale: 0.98, transition: { duration: 0.25 } }
   };
 
   return (
-    <div ref={containerRef} className="relative z-10 w-full max-w-md p-4 flex flex-col items-center justify-center min-h-[600px]">
-      <AnimatePresence mode="wait">
-        
-        {/* STEP 1 */}
-        {step === 1 && (
-          <motion.div key="step1" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="w-full bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-xl border border-white/40 text-center flex flex-col items-center justify-center gap-5">
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-bold text-rose-400 uppercase tracking-widest">{CONFIG.step1.title}</span>
-              <h1 className="text-3xl font-black text-rose-500 font-serif leading-snug">{CONFIG.step1.question}</h1>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4 w-full mt-4 justify-center items-center relative min-h-[120px]">
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setStep(2)} className="px-8 py-3.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-full shadow-lg shadow-rose-200 transition-colors text-base min-w-[160px] z-10">
-                {CONFIG.step1.yesText}
-              </motion.button>
-              <motion.button animate={{ x: noBtnPos.x, y: noBtnPos.y }} transition={{ type: "spring", stiffness: 150, damping: 15 }} onMouseEnter={handleNoHover} onClick={handleNoHover} className="absolute sm:static px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-500 font-medium rounded-full border border-slate-200 text-sm shadow-sm flex items-center gap-1.5">
-                {CONFIG.step1.noText}
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center bg-neutral-950 font-sans select-none overflow-hidden text-neutral-100">
+      
+      {/* Ambient Neon Pink Glow Background */}
+      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-pink-600 rounded-full filter blur-[140px] animate-pulse" />
+      </div>
 
-        {/* STEP 2: HIGH CONTRAST DISABLED STATES */}
-        {step === 2 && (
-          <motion.div key="step2" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="w-full bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-xl border border-white/40 flex flex-col gap-5">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-rose-500 font-serif">{CONFIG.step2.title}</h2>
-            </div>
+      {/* 🎵 Floating Music Player Widget (myorbit style Integration) */}
+      <div className="absolute top-4 right-4 z-50 bg-neutral-900/90 backdrop-blur-md border border-pink-500/30 px-4 py-2.5 rounded-2xl flex items-center gap-4 shadow-lg shadow-pink-500/5 max-w-[280px]">
+        <div className="flex flex-col min-w-[120px]">
+          <span className="text-[10px] uppercase font-black tracking-widest text-pink-500 animate-pulse">Now Playing</span>
+          <span className="text-xs font-bold truncate text-neutral-200">{CONFIG.playlist[currentTrackIdx].title}</span>
+        </div>
+        <button 
+          onClick={() => setIsPlaying(!isPlaying)}
+          className="w-8 h-8 rounded-full bg-pink-500 hover:bg-pink-600 text-neutral-950 font-black flex items-center justify-center text-xs shadow-md shadow-pink-500/20 transition-all active:scale-95"
+        >
+          {isPlaying ? "⏸" : "▶"}
+        </button>
+      </div>
 
-            <div>
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">{CONFIG.step2.dateLabel}</label>
+      <div ref={containerRef} className="relative z-10 w-full max-w-md p-4 flex flex-col items-center justify-center min-h-[620px]">
+        <AnimatePresence mode="wait">
+          
+          {/* STEP 1: WELCOME INTRO */}
+          {step === 1 && (
+            <motion.div key="step1" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="w-full bg-neutral-900/80 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-neutral-800 text-center flex flex-col items-center justify-center gap-6">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-black text-pink-400 uppercase tracking-widest">{CONFIG.step1.title}</span>
+                <h1 className="text-3xl font-black text-neutral-100 tracking-tight leading-tight">{CONFIG.step1.question}</h1>
+              </div>
               
-              <div className="w-full border border-rose-100/70 bg-rose-50/20 rounded-2xl p-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between px-1 text-slate-700 font-semibold text-sm">
-                  <button onClick={handlePrevMonth} disabled={isPrevMonthDisabled} className={`p-1 rounded-lg transition-colors font-mono ${isPrevMonthDisabled ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:bg-rose-100/50'}`}>&lt;</button>
-                  <span className="font-serif text-slate-800 font-bold text-base">{MONTHS[currentMonth]} {currentYear}</span>
-                  <button onClick={handleNextMonth} className="p-1 hover:bg-rose-100/50 rounded-lg transition-colors text-slate-400 font-mono">&gt;</button>
+              <div className="flex flex-col sm:flex-row gap-4 w-full mt-4 justify-center items-center relative min-h-[120px]">
+                <motion.button 
+                  whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(219, 39, 119, 0.4)" }} 
+                  whileTap={{ scale: 0.95 }} 
+                  onClick={() => setStep(2)} 
+                  className="px-8 py-3.5 bg-pink-500 hover:bg-pink-600 text-neutral-950 font-black rounded-xl text-base min-w-[160px] z-10 border-2 border-pink-400 shadow-lg transition-all duration-200"
+                >
+                  {CONFIG.step1.yesText}
+                </motion.button>
+                <motion.button 
+                  animate={{ x: noBtnPos.x, y: noBtnPos.y }} 
+                  transition={{ type: "spring", stiffness: 200, damping: 14 }} 
+                  onMouseEnter={handleNoHover} 
+                  onClick={handleNoHover} 
+                  className="absolute sm:static px-6 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-400 font-bold rounded-xl text-sm border border-neutral-700 transition-colors"
+                >
+                  {CONFIG.step1.noText}
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 2: HIGH-FIDELITY DYNAMIC CALENDAR */}
+          {step === 2 && (
+            <motion.div key="step2" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="w-full bg-neutral-900/80 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-neutral-800 flex flex-col gap-5">
+              <div className="text-center">
+                <h2 className="text-2xl font-black text-neutral-100 tracking-tight">{CONFIG.step2.title}</h2>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-pink-400 uppercase tracking-widest block mb-2">{CONFIG.step2.dateLabel}</label>
+                
+                <div className="w-full border border-neutral-800 bg-neutral-950/60 rounded-2xl p-4 flex flex-col gap-3">
+                  <div className="flex items-center justify-between px-1 text-neutral-300 font-bold text-sm">
+                    <button onClick={handlePrevMonth} disabled={isPrevMonthDisabled} className={`p-1.5 rounded-lg transition-colors font-mono ${isPrevMonthDisabled ? 'text-neutral-700 cursor-not-allowed' : 'text-neutral-400 hover:bg-neutral-800'}`}>&lt;</button>
+                    <span className="text-neutral-200 font-black">{MONTHS[currentMonth]} {currentYear}</span>
+                    <button onClick={handleNextMonth} className="p-1.5 hover:bg-neutral-800 rounded-lg transition-colors text-neutral-400 font-mono">&gt;</button>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-black text-neutral-500 uppercase">
+                    {WEEKDAYS.map(day => <div key={day}>{day}</div>)}
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                    {calendarGrid.map((day, idx) => {
+                      if (day === null) return <div key={`blank-${idx}`} />;
+                      
+                      const isPastDay = currentYear < todayYear || 
+                        (currentYear === todayYear && currentMonth < todayMonth) || 
+                        (currentYear === todayYear && currentMonth === todayMonth && day < todayDay);
+
+                      const isSelected = selectedDate && selectedDate.day === day && selectedDate.month === currentMonth && selectedDate.year === currentYear;
+                      
+                      // 🌟 Easter Egg: Deteksi Spesifik Anniversary & Birthday 14 Agustus
+                      const isSpecialAnniversary = (currentYear === 2026 && currentMonth === 7 && day === 14);
+
+                      return (
+                        <button
+                          key={`day-${day}`}
+                          disabled={isPastDay}
+                          onClick={() => {
+                            setSelectedDate({ day, month: currentMonth, year: currentYear });
+                            setSelectedTime('');
+                          }}
+                          className={`w-8 h-8 mx-auto flex flex-col items-center justify-center rounded-xl relative transition-all duration-150 ${
+                            isSelected 
+                              ? 'bg-pink-500 text-neutral-950 font-black scale-[1.05] border-2 border-neutral-100 shadow-md shadow-pink-500/20' 
+                              : isPastDay
+                                ? 'text-neutral-700 font-light cursor-not-allowed opacity-30'
+                                : isSpecialAnniversary 
+                                  ? 'border-2 border-pink-500 text-pink-400 font-black bg-pink-950/40 animate-pulse shadow-[0_0_10px_rgba(219,39,119,0.3)]'
+                                  : 'text-neutral-300 font-bold hover:bg-neutral-800 hover:text-pink-400'
+                          }`}
+                        >
+                          {day}
+                          {isSpecialAnniversary && !isSelected && (
+                            <span className="absolute -top-1 -right-1 text-[8px] animate-bounce">✨</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400">
-                  {WEEKDAYS.map(day => <div key={day}>{day}</div>)}
-                </div>
-
-                <div className="grid grid-cols-7 gap-1 text-center text-xs">
-                  {calendarGrid.map((day, idx) => {
-                    if (day === null) return <div key={`blank-${idx}`} />;
-                    
-                    const isPastDay = currentYear < todayYear || 
-                      (currentYear === todayYear && currentMonth < todayMonth) || 
-                      (currentYear === todayYear && currentMonth === todayMonth && day < todayDay);
-
-                    const isSelected = selectedDate && selectedDate.day === day && selectedDate.month === currentMonth && selectedDate.year === currentYear;
+              <div>
+                <label className="text-[10px] font-black text-pink-400 uppercase tracking-widest block mb-2">{CONFIG.step2.timeLabel}</label>
+                <div className="grid grid-cols-3 gap-2 max-h-36 overflow-y-auto pr-1">
+                  {TIME_SLOTS.map((time) => {
+                    const isTimeSelected = selectedTime === time;
+                    const isSlotPast = isTimePast(time);
 
                     return (
-                      <button
-                        key={`day-${day}`}
-                        disabled={isPastDay}
-                        onClick={() => {
-                          setSelectedDate({ day, month: currentMonth, year: currentYear });
-                          setSelectedTime('');
-                        }}
-                        className={`w-8 h-8 mx-auto flex items-center justify-center rounded-full transition-all duration-150 ${
-                          isSelected 
-                            ? 'bg-rose-500 text-white shadow-md font-bold scale-[1.05] border-2 border-slate-900' 
-                            : isPastDay
-                              ? 'text-slate-300/85 font-light cursor-not-allowed bg-transparent' // Terbaca jelas abu-abunya namun terkesan non-aktif
-                              : 'text-slate-600 font-medium hover:bg-rose-100/40 hover:text-rose-600'
+                      <button 
+                        key={time}
+                        disabled={isSlotPast}
+                        onClick={() => setSelectedTime(time)} 
+                        className={`py-2 text-xs font-bold rounded-xl transition-all border ${
+                          isTimeSelected 
+                            ? 'bg-neutral-100 text-neutral-950 border-2 border-pink-500 font-black scale-[0.98] shadow-md shadow-pink-500/10' 
+                            : isSlotPast
+                              ? 'bg-neutral-950/40 text-neutral-700 border-neutral-900 cursor-not-allowed opacity-30'
+                              : 'bg-neutral-950 text-neutral-300 border-neutral-800 hover:border-pink-500/50 hover:bg-neutral-800'
                         }`}
                       >
-                        {day}
+                        {time}
                       </button>
                     );
                   })}
                 </div>
               </div>
-            </div>
 
-            <div>
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">{CONFIG.step2.timeLabel}</label>
-              <div className="grid grid-cols-3 gap-2 max-h-36 overflow-y-auto pr-1">
-                {TIME_SLOTS.map((time) => {
-                  const isTimeSelected = selectedTime === time;
-                  const isSlotPast = isTimePast(time);
+              <motion.button whileHover={selectedDate && selectedTime ? { scale: 1.02 } : {}} whileTap={selectedDate && selectedTime ? { scale: 0.98 } : {}} disabled={!selectedDate || !selectedTime} onClick={() => setStep(3)} className={`w-full py-3.5 mt-2 font-black rounded-xl transition-all shadow-lg text-center ${selectedDate && selectedTime ? 'bg-pink-500 text-neutral-950 border-2 border-pink-400 shadow-pink-500/10 hover:bg-pink-600' : 'bg-neutral-800 text-neutral-600 cursor-not-allowed'}`}>
+                {CONFIG.step2.submitText}
+                  </motion.button>
+            </motion.div>
+          )}
 
+          {/* STEP 3: VIBES SELECTOR */}
+          {step === 3 && (
+            <motion.div key="step3" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="w-full bg-neutral-900/80 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-neutral-800 flex flex-col gap-5">
+              <div className="text-center">
+                <h2 className="text-2xl font-black text-neutral-100 tracking-tight">{CONFIG.step3.title}</h2>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
+                {DATE_ACTIVITIES.map((act) => {
+                  const isActSelected = selectedActivity === act.name;
                   return (
-                    <button 
-                      key={time}
-                      disabled={isSlotPast}
-                      onClick={() => setSelectedTime(time)} 
-                      className={`py-2 text-xs font-medium rounded-xl transition-all border ${
-                        isTimeSelected 
-                          ? 'bg-white text-rose-500 border-2 border-slate-900 shadow-md font-bold scale-[0.98]' 
-                          : isSlotPast
-                            ? 'bg-slate-100/70 text-slate-400/60 border-slate-200/50 cursor-not-allowed font-normal' // Terkunci padat berkelas
-                            : 'bg-white text-slate-600 border-slate-100 hover:border-rose-200 hover:bg-rose-50/30'
+                    <motion.button
+                      key={act.id}
+                      whileHover={{ y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setSelectedActivity(act.name)}
+                      className={`p-3.5 rounded-2xl border text-left flex flex-col gap-0.5 transition-all ${
+                        isActSelected
+                          ? 'bg-neutral-800 text-neutral-100 border-2 border-pink-500 shadow-lg font-bold shadow-pink-500/10'
+                          : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:border-pink-500/40 hover:bg-neutral-900'
                       }`}
                     >
-                      {time}
-                    </button>
+                      <span className={`text-sm font-black ${isActSelected ? 'text-pink-400' : 'text-neutral-200'}`}>{act.name}</span>
+                      <span className="text-[10px] leading-tight mt-0.5">{act.description}</span>
+                    </motion.button>
                   );
                 })}
               </div>
-            </div>
 
-            <motion.button whileHover={selectedDate && selectedTime ? { scale: 1.02 } : {}} whileTap={selectedDate && selectedTime ? { scale: 0.98 } : {}} disabled={!selectedDate || !selectedTime} onClick={() => setStep(3)} className={`w-full py-3.5 mt-2 font-bold rounded-2xl transition-all shadow-md text-center ${selectedDate && selectedTime ? 'bg-rose-500 text-white hover:bg-rose-600 shadow-rose-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}>
-              {CONFIG.step2.submitText}
-            </motion.button>
-          </motion.div>
-        )}
+              <motion.button whileHover={selectedActivity ? { scale: 1.02 } : {}} whileTap={selectedActivity ? { scale: 0.98 } : {}} disabled={!selectedActivity} onClick={() => setStep(4)} className={`w-full py-3.5 mt-2 font-black rounded-xl transition-all shadow-lg text-center ${selectedActivity ? 'bg-pink-500 text-neutral-950 border-2 border-pink-400 shadow-pink-500/10 hover:bg-pink-600' : 'bg-neutral-800 text-neutral-600 cursor-not-allowed'}`}>
+                {CONFIG.step3.submitText}
+              </motion.button>
+            </motion.div>
+          )}
 
-        {/* STEP 3 */}
-        {step === 3 && (
-          <motion.div key="step3" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="w-full bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-xl border border-white/40 flex flex-col gap-5">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-rose-500 font-serif">{CONFIG.step3.title}</h2>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
-              {DATE_ACTIVITIES.map((act) => {
-                const isActSelected = selectedActivity === act.name;
-                return (
-                  <motion.button
-                    key={act.id}
-                    whileHover={{ y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setSelectedActivity(act.name)}
-                    className={`p-3.5 rounded-2xl border text-left flex flex-col gap-0.5 transition-all ${
-                      isActSelected
-                        ? 'bg-rose-50/70 text-slate-800 border-2 border-slate-900 shadow-lg font-bold'
-                        : 'bg-white text-slate-700 border-slate-100 hover:border-rose-200'
-                    }`}
-                  >
-                    <span className="text-base font-bold">{act.name}</span>
-                    <span className={`text-[10px] ${isActSelected ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>{act.description}</span>
-                  </motion.button>
-                );
-              })}
-            </div>
-
-            <motion.button whileHover={selectedActivity ? { scale: 1.02 } : {}} whileTap={selectedActivity ? { scale: 0.98 } : {}} disabled={!selectedActivity} onClick={() => setStep(4)} className={`w-full py-3.5 mt-2 font-bold rounded-2xl transition-all shadow-md text-center ${selectedActivity ? 'bg-rose-500 text-white hover:bg-rose-600 shadow-rose-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}>
-              {CONFIG.step3.submitText}
-            </motion.button>
-          </motion.div>
-        )}
-
-        {/* STEP 4 */}
-        {step === 4 && (
-          <motion.div key="step4" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="w-full bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-xl border border-white/40 text-center flex flex-col items-center gap-6 relative overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none w-full h-full overflow-hidden rounded-3xl">
-              {[...Array(12)].map((_, i) => (
-                <motion.div key={i} className="absolute w-2 h-2 bg-pink-400 rounded-full" initial={{ top: "0%", left: `${Math.random() * 100}%`, opacity: 1 }} animate={{ top: "100%", opacity: 0 }} transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, delay: Math.random() }} />
-              ))}
-            </div>
-
-            <h2 className="text-4xl font-black text-rose-500 font-serif tracking-wide animate-bounce">{CONFIG.step4.title}</h2>
-            
-            <div className="w-full bg-rose-50/60 border border-rose-100/80 rounded-2xl p-4 text-left flex flex-col gap-3.5 my-2">
-              <div className="flex items-center gap-3 text-slate-700">
-                <span className="text-lg">📅</span>
-                <span className="font-semibold text-sm sm:text-base">
-                  {selectedDate && new Date(selectedDate.year, selectedDate.month, selectedDate.day).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                </span>
+          {/* STEP 4: SUCCESS SUMMARY */}
+          {step === 4 && (
+            <motion.div key="step4" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="w-full bg-neutral-900/80 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-neutral-800 text-center flex flex-col items-center gap-6 relative overflow-hidden">
+              {/* Confetti Pink Glow particles */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none w-full h-full overflow-hidden rounded-3xl">
+                {[...Array(12)].map((_, i) => (
+                  <motion.div key={i} className="absolute w-1.5 h-1.5 bg-pink-500 rounded-full" initial={{ top: "0%", left: `${Math.random() * 100}%`, opacity: 1 }} animate={{ top: "100%", opacity: 0 }} transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, delay: Math.random() }} />
+                ))}
               </div>
-              <div className="flex items-center gap-3 text-slate-700">
-                <span className="text-lg">⏰</span>
-                <span className="font-semibold text-sm sm:text-base">{selectedTime}</span>
-              </div>
-              <div className="flex items-center gap-3 text-slate-700">
-                <span className="text-lg">✨</span>
-                <span className="font-semibold text-sm sm:text-base">Plan: {selectedActivity}</span>
-              </div>
-            </div>
 
-            <div className="flex flex-col gap-2 mt-2">
-              <p className="text-xl font-bold text-rose-500 font-serif">{CONFIG.step4.successMessage}</p>
-              <p className="text-[9px] text-slate-400 italic mt-3 max-w-[290px] mx-auto leading-normal">{CONFIG.step4.subtext}</p>
-            </div>
-          </motion.div>
-        )}
+              <h2 className="text-4xl font-black text-pink-500 tracking-tight animate-bounce">{CONFIG.step4.title}</h2>
+              
+              <div className="w-full bg-neutral-950/80 border border-neutral-800 rounded-2xl p-5 text-left flex flex-col gap-4 my-1 shadow-inner">
+                <div className="flex items-center gap-3.5 text-neutral-200">
+                  <span className="text-base">📅</span>
+                  <span className="font-bold text-sm sm:text-base text-neutral-100">
+                    {selectedDate && new Date(selectedDate.year, selectedDate.month, selectedDate.day).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3.5 text-neutral-200">
+                  <span className="text-base">⏰</span>
+                  <span className="font-bold text-sm sm:text-base text-neutral-100">{selectedTime}</span>
+                </div>
+                <div className="flex items-center gap-3.5 text-neutral-200">
+                  <span className="text-base">✨</span>
+                  <span className="font-bold text-sm sm:text-base text-pink-400">Plan: {selectedActivity}</span>
+                </div>
+              </div>
 
-      </AnimatePresence>
+              <div className="flex flex-col gap-2 mt-2">
+                <p className="text-xl font-bold text-neutral-100 font-serif">{CONFIG.step4.successMessage}</p>
+                <p className="text-[9px] text-neutral-500 italic mt-3 max-w-[290px] mx-auto leading-normal tracking-wide">{CONFIG.step4.subtext}</p>
+              </div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
